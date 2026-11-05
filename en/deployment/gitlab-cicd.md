@@ -1,6 +1,6 @@
 # Automatic File Deployment to SRKHOST Server Using GitLab CI/CD (SFTP)
 
-When managing a server (whether it's a website, game server, or custom bot), manually uploading files via traditional FTP clients (such as FileZilla or WinSCP) is tedious, time-consuming, and prone to human error (e.g., placing files into the wrong directory, missing updates, or accidentally overwriting configuration files).
+When managing a server (whether it's a website, game server, or custom bot), manually uploading files via traditional SFTP clients (such as FileZilla or WinSCP) is tedious, time-consuming, and prone to human error (e.g., placing files into the wrong directory, missing updates, or accidentally overwriting configuration files).
 
 The **goal** of this guide is to demonstrate how to automatically synchronize your code hosted on GitLab with your SRKHOST server over a secure SFTP connection every time you deploy changes (via git push or merge).
 
@@ -18,7 +18,7 @@ Before setting up the pipeline, make sure you have:
 1. **GitLab Account and Project:** An active GitLab repository where your project code resides.
 2. **Active SRKHOST Service:** A running server (e.g., web server, bot, or game server).
 3. **SFTP Connection Details:** Found directly in your SRKHOST control panel:
-   - **Server Address (Host):** e.g., `node01.srkhost.hu` or the server IP address.
+   - **Server Address (Host):** e.g., `node01.srkhost.eu` or the server IP address.
    - **Port:** By default, **`2022`** is used for SFTP connections.
    - **Username:** Your SFTP account identifier (e.g., `username.a1b2c3d4`).
    - **Password:** The password associated with your account / SFTP access.
@@ -54,7 +54,7 @@ Your SFTP connection credentials (especially your password) must **never** be ha
 
 | Variable Name (Key) | Value | Environments | Flags / Type |
 | :--- | :--- | :--- | :--- |
-| `FTP_HOST` | Server host / IP address (e.g., `node01.srkhost.hu`) | `All (default)` | `Protected`, `Masked` |
+| `FTP_HOST` | Server host / IP address (e.g., `node01.srkhost.eu`) | `All (default)` | `Protected`, `Masked` |
 | `FTP_USER` | Your SFTP username | `All (default)` | `Protected`, `Masked` |
 | `FTP_PASS` | Your SFTP password | `All (default)` | `Protected`, `Masked`, `Expanded` |
 

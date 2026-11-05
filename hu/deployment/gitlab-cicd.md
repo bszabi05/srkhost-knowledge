@@ -1,6 +1,6 @@
 # Fájlok automatikus feltöltése SRKHOST szerverre GitLab CI/CD (SFTP) segítségével
 
-Amikor egy szervert üzemeltetsz (legyen az weboldal, játékszerver vagy egyedi bot), a fájlok manuális másolása FTP klienseken (pl. FileZilla, WinSCP) keresztül időigényes, monoton, és folyamatosan magában hordozza az emberi tévedések lehetőségét (pl. rossz mappába másolt fájlok, kimaradt frissítések vagy véletlenül felülírt konfigurációk).
+Amikor egy szervert üzemeltetsz (legyen az weboldal, játékszerver vagy egyedi bot), a fájlok manuális másolása SFTP klienseken (pl. FileZilla, WinSCP) keresztül időigényes, monoton, és folyamatosan magában hordozza az emberi tévedések lehetőségét (pl. rossz mappába másolt fájlok, kimaradt frissítések vagy véletlenül felülírt konfigurációk).
 
 Ennek a leírásnak a **célja**, hogy bemutassa: hogyan tudod a GitLabon tárolt kódodat egy automatizált CI/CD pipeline segítségével, biztonságos SFTP kapcsolaton keresztül szinkronizálni az SRKHOST szervereddel minden egyes élesítéskor (git push vagy merge esetén).
 
@@ -18,7 +18,7 @@ A beállítás előtt gondoskodj a következőkről:
 1. **GitLab fiók és projekt:** Egy működő GitLab repository, ahol a projekt kódját kezeled.
 2. **Aktív SRKHOST szolgáltatás:** Egy futó szerver (pl. web, bot vagy játékszerver).
 3. **SFTP hozzáférési adatok:** Ezeket az SRKHOST szerverkezelő felületén találod:
-   - **Szerver címe (Host):** pl. `node01.srkhost.hu` vagy a szerver IP címe.
+   - **Szerver címe (Host):** pl. `node01.srkhost.eu` vagy a szerver IP címe.
    - **Port:** Alapértelmezetten a **`2022`**-es portot használjuk SFTP kapcsolathoz.
    - **Felhasználónév (Username):** Az SFTP fiókod azonosítója (pl. `felhasznalonev.a1b2c3d4`).
    - **Jelszó (Password):** A fiókodhoz tartozó jelszó.
@@ -54,7 +54,7 @@ Az SFTP csatlakozáshoz szükséges adatokat (különösen a jelszavadat) **szig
 
 | Változó neve (Key) | Érték (Value) | Környezet (Environments) | Beállítások (Flags) |
 | :--- | :--- | :--- | :--- |
-| `FTP_HOST` | A szervered címe / IP címe (pl. `node01.srkhost.hu`) | `All (default)` | `Protected`, `Masked` |
+| `FTP_HOST` | A szervered címe / IP címe (pl. `node01.srkhost.eu`) | `All (default)` | `Protected`, `Masked` |
 | `FTP_USER` | Az SFTP felhasználóneved | `All (default)` | `Protected`, `Masked` |
 | `FTP_PASS` | Az SFTP jelszavad | `All (default)` | `Protected`, `Masked`, `Expanded` |
 

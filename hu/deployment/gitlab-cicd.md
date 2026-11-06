@@ -4,10 +4,7 @@ Amikor egy szervert üzemeltetsz (legyen az weboldal, játékszerver vagy egyedi
 
 Ennek a leírásnak a **célja**, hogy bemutassa: hogyan tudod a GitLabon tárolt kódodat egy automatizált CI/CD pipeline segítségével, biztonságos SFTP kapcsolaton keresztül szinkronizálni az SRKHOST szervereddel minden egyes élesítéskor (git push vagy merge esetén).
 
-:::info
-**Mi az a CI/CD?**
-A CI/CD (Folyamatos Integráció és Folyamatos Kézbesítés / Üzembe helyezés) egy automatizálási módszertan. Lényege, hogy a fejlesztőnek csak annyi a dolga, hogy a Git repository-ba elmenti (pusholja) a kódváltozásokat, a háttérben futó GitLab Runner pedig automatikusan elvégzi a tesztelést, a buildelést és a fájlok szerverre juttatását.
-:::
+:::info **Mi az a CI/CD?** A CI/CD egy automatizálási módszertan, amellyel a Git repository-ba mentett kódváltozásokat a háttérben futó GitLab Runner automatikusan teszteli, buildeli és feltölti a szerverre.:::
 
 ---
 
@@ -23,10 +20,7 @@ A beállítás előtt gondoskodj a következőkről:
    - **Felhasználónév (Username):** Az SFTP fiókod azonosítója (pl. `felhasznalonev.a1b2c3d4`).
    - **Jelszó (Password):** A fiókodhoz tartozó jelszó.
 
-:::warning
-**Hol találod az SFTP adatokat?**
-Az SRKHOST vezérlőpultján (Pterodactyl panel) válaszd ki a szerveredet, majd lépj a **Beállítások (Settings)** menüpontra, és keresd meg az **SFTP Details** szekciót.
-:::
+:::warning **Hol találod az SFTP adatokat?** Az SRKHOST vezérlőpultján (Pterodactyl panel) válaszd ki a szerveredet, lépj a Beállítások (Settings) menüpontra, és keresd meg az SFTP Details szekciót.:::
 
 ---
 
@@ -62,17 +56,15 @@ Az SFTP csatlakozáshoz szükséges adatokat (különösen a jelszavadat) **szig
 
 ### Mire figyelj a változók rögzítésekor?
 
-:::info
-**Miért ideális ez a beállítás?**
+:::info **Miért ideális a Protected és Masked beállítás?** A Protected opció biztosítja, hogy a változók csak védett ágakon (pl. main) fussanak le, a Masked pedig elrejti az értékeket a logokban ([MASKED]).:::
+
+#### Fontos tudnivalók a változókról:
 - **Protected (Védett):** Mindhárom változó megkapta a `Protected` címkét. Ez maximális biztonságot nyújt: a titkos adatokhoz kizárólag védett ágak (Protected branches, pl. a `main`) férhetnek hozzá. Ha valaki egy nyílt vagy fejlesztői ágon indít pipeline-t, a változók nem lesznek elérhetőek, így kizárt a véletlen élesítés vagy adatlopás.
 - **Masked (Maszkolt):** Mindhárom változó el van maszkolva, így a GitLab Runner futási naplóiban (job logs) a jelszó mellett a szerver címe és a felhasználónév sem jelenik meg nyílt szövegként, csupán `[MASKED]` formában.
-:::
-
-:::warning
-**Figyelj az "Expanded" beállításra és a dollárjelre (`$`):**
 - **Expanded jelölés az `FTP_PASS`-nál:** Ha a jelszavad tartalmazza a `$` karaktert (pl. `P@ss$word`), a GitLab környezeti változóként próbálhatja feloldani azt az `Expanded` mód miatt, ami levághatja a jelszó egy részét és `Login incorrect` hibát okozhat. Ha a jelszavadban van `$`, a változó szerkesztésénél érdemes kivenni a pipát az **Expand variable** opció elől!
-- **Karakterkövetelmények maszkolásnál:** A GitLab elvárja, hogy a maszkolt érték legalább 8 karakter hosszú legyen, egyetlen sorból álljon, és ne tartalmazzon a GitLab által tiltott speciális karakterformátumokat.
-:::
+- **Karakterkövetelmények maszkolásnál:** A GitLab elvárja, hogy a maszkolt érték legalább 8 karakter hosszú legyen, egyetlen sorból álljon, és ne tartalmazzon tiltott karakterformátumokat.
+
+:::warning **Figyelem a dollárjelre ($):** Ha az SFTP jelszavadban dollárjel szerepel, kapcsold ki az Expand variable opciót, különben a GitLab változóként kísérli meg behelyettesíteni!:::
 
 ---
 
@@ -121,12 +113,7 @@ A feltöltést a rendkívül gyors és megbízható `lftp` segédprogram végzi.
 | `--exclude-glob .git*` | Figyelmen kívül hagyja a Git belső mappáit (`.git`, `.gitignore`, `.gitattributes`). |
 | `--exclude .gitlab-ci.yml` | Megakadályozza, hogy magát a CI konfigurációs fájlt feleslegesen feltöltse a szerverre. |
 
-:::danger
-**FIGYELEM: A `-e` (`--delete`) kapcsoló veszélyei!**
-A `-e` kapcsoló garantálja, hogy a szerver tiszta maradjon és a törölt fájlok a szerverről is elessenek. **DE:** ha a szervereden futás közben keletkező adatok vannak (például `logs/` mappa, SQLite adatbázis `database.sqlite`, felhasználói feltöltések vagy játékmentések), és ezek nincsenek a Git repódban, **az lftp törölni fogja őket a szerverről!**
-- **Megoldás 1:** Ha dinamikus fájlokat is tárol a szerver a gyökérben, **távolítsd el a `-e` kapcsolót** a parancsból a biztonságos, hozzáadó (additive) szinkronizáláshoz!
-- **Megoldás 2:** Adj hozzá további kizárásokat, például: `--exclude logs/ --exclude storage/ --exclude database.sqlite`.
-:::
+:::danger **FIGYELEM: A -e (--delete) kapcsoló veszélyei!** Ha a szervereden futás közben keletkező adatok vannak (pl. database.sqlite, logs/, mentések), és ezek nincsenek a Git repóban, az lftp törölni fogja őket! Dinamikus adatok esetén távolítsd el a -e kapcsolót, vagy adj hozzá --exclude szabályokat!:::
 
 ---
 
@@ -139,9 +126,7 @@ A `-e` kapcsoló garantálja, hogy a szerver tiszta maradjon és a törölt fáj
 
 ![GitLab CI/CD Pipeline élesben](assets/srk_gitlab_pipeline.gif)
 
-:::success
-Ha a pipeline zöld pipával fejeződik be (`Job succeeded`), a fájlok sikeresen megjelentek az SRKHOST szervereden!
-:::
+:::success **Sikeres lefutás:** Ha a pipeline zöld pipával fejeződik be (Job succeeded), a fájlok sikeresen és hiánytalanul megjelentek az SRKHOST szervereden!:::
 
 ---
 
@@ -178,9 +163,9 @@ Ha nem a szerver gyökérkönyvtárába (`/`), hanem egy adott mappába szeretn�
 
 ## Tippek és trükkök (Pro Tips)
 
-:::quote
-**Tipp 1: Manuális jóváhagyás az élesítéshez (`when: manual`)**
+### 1. Tipp: Manuális jóváhagyás az élesítéshez (`when: manual`)
 Ha szeretnéd, hogy a kód beolvasztása után a szerverre töltés ne azonnal, hanem csak a jóváhagyásod után (egy gomb megnyomására) fusson le, egészítsd ki a `.gitlab-ci.yml` fájlt a `when: manual` direktívával:
+
 ```yaml
 deploy_to_srkhost:
   stage: deploy
@@ -193,21 +178,18 @@ deploy_to_srkhost:
     - main
   when: manual
 ```
-:::
 
-:::quote
-**Tipp 2: Próbafuttatás (`--dry-run`) hibakereséshez**
+### 2. Tipp: Próbafuttatás (`--dry-run`) hibakereséshez
 Ha félsz attól, hogy a pipeline véletlenül letörölne valamit a szerverről, illeszd be a `--dry-run` kapcsolót az `lftp` parancsba:
+
 ```bash
 mirror -Rnev --dry-run ./ / ...
 ```
-Ekkor az `lftp` csak szimulálja a műveletet és a logban kiírja, hogy mit csinálna, anélkül, hogy ténylegesen hozzáérne a szerveren lévő fájlokhoz.
-:::
 
-:::quote
-**Tipp 3: Gyorsabb futás Alpine csomaggyorsítótárral**
+Ekkor az `lftp` csak szimulálja a műveletet és a logban kiírja, hogy mit csinálna, anélkül, hogy ténylegesen hozzáérne a szerveren lévő fájlokhoz.
+
+### 3. Tipp: Gyorsabb futás Alpine csomaggyorsítótárral
 Az `apk add --no-cache` használata megakadályozza a felesleges indexfájlok tárolását a konténerben, így a runner másodpercekkel hamarabb indulhat el.
-:::
 
 ---
 

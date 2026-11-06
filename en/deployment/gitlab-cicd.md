@@ -1,13 +1,10 @@
 # Automatic File Deployment to SRKHOST Server Using GitLab CI/CD (SFTP)
 
-When managing a server (whether it's a website, game server, or custom bot), manually uploading files via traditional SFTP clients (such as FileZilla or WinSCP) is tedious, time-consuming, and prone to human error (e.g., placing files into the wrong directory, missing updates, or accidentally overwriting configuration files).
+When managing a server (whether it's a website, game server, or custom bot), manually uploading files via SFTP clients (such as FileZilla or WinSCP) is tedious, time-consuming, and prone to human error (e.g., placing files into the wrong directory, missing updates, or accidentally overwriting configuration files).
 
 The **goal** of this guide is to demonstrate how to automatically synchronize your code hosted on GitLab with your SRKHOST server over a secure SFTP connection every time you deploy changes (via git push or merge).
 
-:::info
-**What is CI/CD?**
-CI/CD (Continuous Integration and Continuous Delivery / Deployment) is a software delivery practice. The developer only needs to commit and push changes to the Git repository, while the background GitLab Runner handles testing, building, and deploying the files to the server automatically.
-:::
+:::info **What is CI/CD?** CI/CD is an automated workflow practice: developers simply push code changes to the Git repository, while the background GitLab Runner handles testing, building, and deploying the files to the server automatically.:::
 
 ---
 
@@ -23,10 +20,7 @@ Before setting up the pipeline, make sure you have:
    - **Username:** Your SFTP account identifier (e.g., `username.a1b2c3d4`).
    - **Password:** The password associated with your account / SFTP access.
 
-:::warning
-**Where to find SFTP credentials?**
-In your SRKHOST control panel (Pterodactyl panel), select your server, navigate to **Settings**, and locate the **SFTP Details** section.
-:::
+:::warning **Where to find SFTP credentials?** In your SRKHOST control panel (Pterodactyl panel), select your server, navigate to Settings, and locate the SFTP Details section.:::
 
 ---
 
@@ -62,17 +56,15 @@ Your SFTP connection credentials (especially your password) must **never** be ha
 
 ### Key Considerations When Adding Variables
 
-:::info
-**Why this setup is ideal:**
+:::info **Why Protected and Masked settings matter:** The Protected toggle ensures secrets are only injected into protected branches (e.g., main), and Masked hides the values in runner logs ([MASKED]).:::
+
+#### Important details regarding your variables:
 - **Protected:** All three variables are marked as `Protected`. This guarantees that secrets are only injected into pipelines running on protected branches (such as `main`). Unprotected feature branches cannot access them, preventing accidental deployments or leaks.
 - **Masked:** All three variables are masked, ensuring neither your password nor your host address or username will appear in the plaintext build logs—they are replaced with `[MASKED]`.
-:::
-
-:::warning
-**Watch out for the "Expanded" toggle and dollar signs (`$`):**
 - **Expanded flag on `FTP_PASS`:** If your password contains a `$` character (e.g., `P@ss$word`), GitLab may attempt to expand it as an environment variable due to the `Expanded` mode, which can truncate the password and cause `Login incorrect` errors. If your password contains a `$`, uncheck **Expand variable** when saving.
 - **Masking requirements:** GitLab requires masked values to be at least 8 characters long, single-line, and without forbidden character sequences.
-:::
+
+:::warning **Watch out for dollar signs ($):** If your SFTP password contains a dollar sign, uncheck the Expand variable option to avoid GitLab attempting variable expansion!:::
 
 ---
 
@@ -121,12 +113,7 @@ The synchronization is performed using `lftp`, an advanced and resilient file tr
 | `--exclude-glob .git*` | Excludes Git tracking directories and files (`.git/`, `.gitignore`, etc.). |
 | `--exclude .gitlab-ci.yml` | Prevents the CI configuration file from being uploaded to the server root. |
 
-:::danger
-**CAUTION: Dangers of the `-e` (`--delete`) flag!**
-The `-e` flag keeps the remote server clean by removing files not present in Git. **HOWEVER**, if your server produces runtime files (such as `logs/`, an SQLite database `database.sqlite`, user-uploaded files, or Minecraft world data) that are not tracked in your repository, **lftp will permanently delete them from the server!**
-- **Solution 1:** If your server contains dynamic files in its root directory, **remove the `-e` flag** to perform safe, additive synchronization.
-- **Solution 2:** Explicitly exclude persistent directories or files, e.g.: `--exclude logs/ --exclude storage/ --exclude database.sqlite`.
-:::
+:::danger **CAUTION: Dangers of the -e (--delete) flag!** If your server produces runtime files (such as database.sqlite, logs/, uploads, or game saves) not tracked in Git, lftp will delete them! Remove the -e flag for additive sync or add --exclude rules!:::
 
 ---
 
@@ -139,9 +126,7 @@ The `-e` flag keeps the remote server clean by removing files not present in Git
 
 ![GitLab CI/CD Pipeline in Action](assets/srk_gitlab_pipeline.gif)
 
-:::success
-When the pipeline finishes with a green checkmark (`Job succeeded`), your files have been successfully transferred to your SRKHOST server!
-:::
+:::success **Successful Run:** When the pipeline finishes with a green checkmark (Job succeeded), your files have been successfully transferred to your SRKHOST server!:::
 
 ---
 
@@ -178,9 +163,9 @@ If you want to deploy code into a specific subfolder rather than the server root
 
 ## Pro Tips
 
-:::quote
-**Tip 1: Manual Approval for Deployments (`when: manual`)**
+### Tip 1: Manual Approval for Deployments (`when: manual`)
 If you prefer triggering deployments on demand rather than automatically upon every merge, add `when: manual` to your job definition:
+
 ```yaml
 deploy_to_srkhost:
   stage: deploy
@@ -193,20 +178,16 @@ deploy_to_srkhost:
     - main
   when: manual
 ```
-:::
 
-:::quote
-**Tip 2: Dry Run Testing (`--dry-run`)**
+### Tip 2: Dry Run Testing (`--dry-run`)
 Before running a synchronization with file deletion enabled, add the `--dry-run` flag to test what `lftp` would do without making actual changes:
+
 ```bash
 mirror -Rnev --dry-run ./ / ...
 ```
-:::
 
-:::quote
-**Tip 3: Faster Pipelines with `--no-cache`**
+### Tip 3: Faster Pipelines with `--no-cache`
 Using `apk add --no-cache` prevents caching the Alpine package index locally inside the runner container, saving startup time and bandwidth.
-:::
 
 ---
 
@@ -219,4 +200,3 @@ Using `apk add --no-cache` prevents caching the Alpine package index locally ins
 | `Connection timed out` or `Connection refused` | Server unreachable or firewall blocking port. | 1. Verify `FTP_HOST` and ensure port **2022** is used.<br>2. Check if the server is in "Running" status in the SRKHOST panel. |
 | `Access denied` | Insufficient permissions on destination folder. | Verify SFTP user permissions and folder permissions in the server file manager. |
 | Remote files disappeared after deployment | The `-e` (`--delete`) flag removed untracked files. | Remove `-e` from the `mirror` command or protect folders using `--exclude`. |
-
